@@ -16,7 +16,6 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.interactions.modals.ModalMapping;
-import org.w3c.dom.Node;
 
 import java.util.ArrayList;
 import java.util.List;
