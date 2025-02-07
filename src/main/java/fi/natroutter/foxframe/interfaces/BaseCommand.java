@@ -67,7 +67,7 @@ public abstract class BaseCommand {
     private List<OptionData> arguments = new ArrayList<>();
 
     @Getter @Setter
-    private Node permission;
+    private PermissionNode permission;
 
     @Setter
     private Consumer<removedCooldown> onCooldownRemoved = data -> {
