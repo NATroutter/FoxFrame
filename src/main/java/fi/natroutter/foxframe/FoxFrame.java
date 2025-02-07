@@ -1,13 +1,9 @@
 package fi.natroutter.foxframe;
 
 import fi.natroutter.foxframe.data.EmojiData;
-import fi.natroutter.foxframe.interfaces.BaseCommand;
 import fi.natroutter.foxframe.records.GuildTime;
-import fi.natroutter.foxlib.FoxLib;
 import fi.natroutter.foxlib.logger.FoxLogger;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
@@ -25,9 +21,9 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class FoxFrame {
@@ -60,6 +56,13 @@ public class FoxFrame {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setColor(themeColor);
         return eb;
+    }
+
+    public static boolean isTokenValidFormat(String token) {
+        String regex = "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(token);
+        return matcher.matches();
     }
 
     public static EmbedBuilder error(String msg) {

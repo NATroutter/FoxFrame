@@ -1,9 +1,10 @@
-package fi.natroutter.foxframe.interfaces;
+package fi.natroutter.foxframe.command;
 
 import fi.natroutter.foxframe.FoxFrame;
 import fi.natroutter.foxframe.components.BaseButton;
 import fi.natroutter.foxframe.components.BaseModal;
 import fi.natroutter.foxframe.components.BaseStringMenu;
+import fi.natroutter.foxframe.permissions.INode;
 import lombok.Getter;
 import lombok.Setter;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -67,7 +68,7 @@ public abstract class BaseCommand {
     private List<OptionData> arguments = new ArrayList<>();
 
     @Getter @Setter
-    private PermissionNode permission;
+    private INode permission;
 
     @Setter
     private Consumer<removedCooldown> onCooldownRemoved = data -> {
