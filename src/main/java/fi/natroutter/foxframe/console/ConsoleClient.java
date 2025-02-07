@@ -1,18 +1,22 @@
 package fi.natroutter.foxframe.console;
 
+import fi.natroutter.foxframe.FoxFrame;
 import fi.natroutter.foxframe.console.commands.*;
 import fi.natroutter.foxframe.interfaces.HandlerFrame;
 import fi.natroutter.foxlib.FoxLib;
+import fi.natroutter.foxlib.logger.FoxLogger;
 import lombok.Getter;
 import lombok.Setter;
 import net.dv8tion.jda.api.entities.Guild;
 
 import java.util.*;
+import java.util.logging.Logger;
 
 public class ConsoleClient {
 
     private Scanner scanner = new Scanner(System.in);
     private HandlerFrame handler;
+    private FoxLogger logger = FoxFrame.getLogger();
 
     @Getter @Setter
     private boolean useDefaultHelpCommand = true;
@@ -26,12 +30,17 @@ public class ConsoleClient {
 
         register(new Channels(), new Guilds(), new Quit(), new Say(), new Select());
 
+        logger.info("Console client is running!");
+        if (useDefaultHelpCommand) {
+            logger.info("Get started by typing \"help\"");
+        }
+
         loop();
     }
 
     public void register(ConsoleCommand... commands) {
         for(ConsoleCommand c : commands) {
-            this.commands.put(c.getName(), new Select());
+            this.commands.put(c.getName(), c);
         }
     }
 
@@ -57,10 +66,6 @@ public class ConsoleClient {
             args = new String[0];
         }
 
-        if (!commands.containsKey(command.toLowerCase())) {
-            println("Unknown command: " + input);
-            return;
-        }
         if (useDefaultHelpCommand && command.equalsIgnoreCase("help")) {
             println("======= "+handler.getBotName()+" Console Client =======");
             println("Version: " + handler.getVersion());
@@ -75,6 +80,12 @@ public class ConsoleClient {
             for(ConsoleCommand c : commands.values()) {
                 println("  "+c.getUsage()+" - " + c.getDescription());
             }
+            loop();
+        }
+
+        if (!commands.containsKey(command.toLowerCase())) {
+            println("Unknown command: " + input);
+            loop();
         }
 
         ConsoleCommand cmd = commands.get(command.toLowerCase());
