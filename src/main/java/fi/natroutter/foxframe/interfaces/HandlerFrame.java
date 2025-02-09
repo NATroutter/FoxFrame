@@ -92,6 +92,7 @@ public abstract class HandlerFrame {
     }
 
     public void connect(Consumer<JDA> consumer) {
+        if (builder == null) return;
         logger.info("Connecting to discord...");
 
         try {
