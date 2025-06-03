@@ -1,6 +1,6 @@
 package fi.natroutter.foxframe.console;
 
-import fi.natroutter.foxframe.interfaces.HandlerFrame;
+import fi.natroutter.foxframe.bot.BotHandler;
 import fi.natroutter.foxlib.FoxLib;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -13,7 +13,7 @@ public abstract class ConsoleCommand {
     private String description;
     private String usage;
 
-    public abstract ConsoleData execute(HandlerFrame handler, ConsoleData data, String[] args);
+    public abstract ConsoleData execute(BotHandler handler, ConsoleData data, String[] args);
 
     public void print(String msg) {
         FoxLib.print(msg);

@@ -4,22 +4,22 @@ import fi.natroutter.foxframe.console.ConsoleCommand;
 import fi.natroutter.foxframe.console.ConsoleData;
 import fi.natroutter.foxframe.bot.BotHandler;
 
-public class Quit extends ConsoleCommand {
+public class Reload extends ConsoleCommand {
 
 
-    public Quit() {
-        super("quit","Disconnects the bot and shutdowns the application", "quit");
+    public Reload() {
+        super("reload","Reloads all bot commands", "reload");
     }
 
     @Override
     public ConsoleData execute(BotHandler handler, ConsoleData data, String[] args) {
         if (handler.isConnected()) {
-            handler.getJDA().shutdown();
-            println("Bot has been stopped!");
+            println("Reloading...");
+            handler.reloadCommands();
+            println("Reload Done.");
         } else {
             println("Bot is not connected!");
         }
-        System.exit(0);
         return data;
     }
 }

@@ -21,6 +21,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -31,16 +32,41 @@ public class FoxFrame {
     //TODO add permission system same as in FoxBot but change the mongoDB to sqlite?
 
     @Getter @Setter
-    private static Color themeColor = Color.RED;
+    private static Color themeColor = new Color(215, 55, 45);
+
+    @Getter @Setter
+    private static Color SuccessColor = new Color(55, 215, 45);
+
+    @Getter @Setter
+    private static Color InfoColor = new Color(55, 45, 215);
+
+    @Getter @Setter
+    private static Color ErrorColor = new Color(255, 0, 0);
+
+    @Getter @Setter
+    private static Color WarnColor = new Color(215, 145, 45);
 
     @Getter @Setter
     private static EmojiData infoEmoji = new EmojiData("information_source", -1, false);
+
+    @Getter @Setter
+    private static EmojiData successEmoji = new EmojiData("white_check_mark", -1, false);
+
+    @Getter @Setter
+    private static EmojiData warnEmoji = new EmojiData("warning", -1, false);
 
     @Getter @Setter
     private static EmojiData errorEmoji = new EmojiData("no_entry_sign", -1, false);
 
     @Getter @Setter
     private static EmojiData usageEmoji = new EmojiData("books", -1, false);
+
+    @Getter @Setter
+    private static EmojiData helpEmoji = new EmojiData("scroll", -1, false);
+
+    @Getter @Setter
+    private static boolean useEmojis = true;
+
 
     @Getter @Setter
     private static FoxLogger logger = new FoxLogger.Builder()
@@ -70,18 +96,37 @@ public class FoxFrame {
     }
     public static EmbedBuilder error(String title, String msg) {
         EmbedBuilder eb =  embedTemplate();
-        eb.setColor(Color.decode("#ff0000"));
-        eb.setTitle(title);
+        eb.setColor(ErrorColor);
+        eb.setTitle((useEmojis ? errorEmoji.asFormat():"") + title);
         if (msg != null) {
             eb.setDescription(msg);
         }
         return eb;
     }
 
-    public static EmbedBuilder info(String msg) {
+    public static EmbedBuilder warn(String msg) {return warn(" Warning!",msg);}
+    public static EmbedBuilder warn(String title, String msg) {
         EmbedBuilder eb =  embedTemplate();
-        eb.setColor(Color.decode("#0073ff"));
-        eb.setTitle(infoEmoji.asFormat()+" Info");
+        eb.setColor(WarnColor);
+        eb.setTitle((useEmojis ? warnEmoji.asFormat():"")+title);
+        eb.setDescription(msg);
+        return eb;
+    }
+
+    public static EmbedBuilder info(String msg) {return info(" Info.",msg);}
+    public static EmbedBuilder info(String title, String msg) {
+        EmbedBuilder eb =  embedTemplate();
+        eb.setColor(InfoColor);
+        eb.setTitle((useEmojis ? infoEmoji.asFormat():"")+title);
+        eb.setDescription(msg);
+        return eb;
+    }
+
+    public static EmbedBuilder success(String msg) {return success(" Success.",msg);}
+    public static EmbedBuilder success(String title, String msg) {
+        EmbedBuilder eb =  embedTemplate();
+        eb.setColor(SuccessColor);
+        eb.setTitle((useEmojis ? successEmoji.asFormat():"")+title);
         eb.setDescription(msg);
         return eb;
     }
@@ -89,12 +134,33 @@ public class FoxFrame {
     public static EmbedBuilder usage(String usage) { return usage(null,usage); }
     public static EmbedBuilder usage(String leadingMessage, String usage) {
         EmbedBuilder eb =  embedTemplate();
-        eb.setColor(Color.decode("#ff0000"));
-        eb.setTitle(usageEmoji.asFormat()+" You didn't use that correctly!");
+        eb.setColor(InfoColor);
+        eb.setTitle((useEmojis ? usageEmoji.asFormat():"")+" You didn't use that correctly!");
         if (leadingMessage != null) {
             eb.setDescription(leadingMessage + "\n\n> **Usage:** _" + usage + "_");
         } else {
             eb.setDescription("> **Usage:** _" + usage + "_");
+        }
+        return eb;
+    }
+
+    public record HelpEntry(String command, String description) {}
+    public static EmbedBuilder helpMessage(String title, String description, HelpEntry... helps) {
+        return helpMessage(title,description,false,helps);
+    }
+    public static EmbedBuilder helpMessage(String title, String description,boolean spaced, HelpEntry... helps) {
+        EmbedBuilder eb =  embedTemplate();
+        eb.setColor(InfoColor);
+        eb.setTitle((useEmojis ? helpEmoji.asFormat():"")+" " + title);
+
+        String help = Arrays.stream(helps).map(e->
+                "> ### **"+e.command()+"**\n> _" + e.description() + "_\n" + (spaced ? "\n" : "")
+        ).collect(Collectors.joining());
+
+        if (description != null) {
+            eb.setDescription(description + "\n\n" + help);
+        } else {
+            eb.setDescription(help);
         }
         return eb;
     }
@@ -137,6 +203,11 @@ public class FoxFrame {
     public static GuildTime getGuildTime(Member member) {
         ZoneId helsinki = ZoneId.of("Europe/Helsinki");
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+        return getGuildTime(member, helsinki, formatter);
+    }
+    public static GuildTime getGuildTime(Member member, String timeZoneName, String dateFormatPattern) {
+        ZoneId helsinki = ZoneId.of(timeZoneName);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(dateFormatPattern);
         return getGuildTime(member, helsinki, formatter);
     }
     public static GuildTime getGuildTime(Member member, ZoneId timeZone, DateTimeFormatter formatter) {

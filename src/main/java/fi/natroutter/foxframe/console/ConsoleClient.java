@@ -2,33 +2,47 @@ package fi.natroutter.foxframe.console;
 
 import fi.natroutter.foxframe.FoxFrame;
 import fi.natroutter.foxframe.console.commands.*;
-import fi.natroutter.foxframe.interfaces.HandlerFrame;
+import fi.natroutter.foxframe.bot.BotHandler;
 import fi.natroutter.foxlib.FoxLib;
 import fi.natroutter.foxlib.logger.FoxLogger;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Guild;
 
 import java.util.*;
-import java.util.logging.Logger;
 
+@Slf4j
 public class ConsoleClient {
 
     private Scanner scanner = new Scanner(System.in);
-    private HandlerFrame handler;
+    private BotHandler handler;
     private FoxLogger logger = FoxFrame.getLogger();
 
     @Getter @Setter
     private boolean useDefaultHelpCommand = true;
 
+    @Getter @Setter
+    private boolean useDefaultCommands = true;
+
     private ConsoleData data = new ConsoleData();
 
     private Map<String, ConsoleCommand> commands = new HashMap<>();
 
-    public ConsoleClient(HandlerFrame handler) {
+    public ConsoleClient(BotHandler handler) {
         this.handler = handler;
 
-        register(new Channels(), new Guilds(), new Quit(), new Say(), new Select());
+        if (useDefaultCommands) {
+            register(
+                    new Channels(),
+                    new Guilds(),
+                    new Quit(),
+                    new Reload(),
+                    new Say(),
+                    new Select()
+            );
+        }
+
 
         logger.info("Console client is running!");
         if (useDefaultHelpCommand) {
@@ -45,6 +59,10 @@ public class ConsoleClient {
     }
 
     public void loop() {
+        if (commands.isEmpty()) {
+            logger.warn("There is no commands registered for ConsoleClient. Exiting ConsoleClient");
+            return;
+        }
         print("> ");
         String input = scanner.nextLine();
 

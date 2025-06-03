@@ -2,7 +2,7 @@ package fi.natroutter.foxframe.console.commands;
 
 import fi.natroutter.foxframe.console.ConsoleCommand;
 import fi.natroutter.foxframe.console.ConsoleData;
-import fi.natroutter.foxframe.interfaces.HandlerFrame;
+import fi.natroutter.foxframe.bot.BotHandler;
 
 public class Say extends ConsoleCommand {
 
@@ -12,7 +12,7 @@ public class Say extends ConsoleCommand {
     }
 
     @Override
-    public ConsoleData execute(HandlerFrame handler, ConsoleData data, String[] args) {
+    public ConsoleData execute(BotHandler handler, ConsoleData data, String[] args) {
         if (args.length < 1) {
             println("Usage: say <message>");
             return null;

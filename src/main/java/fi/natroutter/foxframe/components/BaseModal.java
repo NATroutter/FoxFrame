@@ -3,13 +3,18 @@ package fi.natroutter.foxframe.components;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import net.dv8tion.jda.api.interactions.components.ItemComponent;
+
+import java.util.List;
 
 @Getter
-@Setter
 @AllArgsConstructor
 public class BaseModal {
 
     private String id;
-    private ModalReply modal;
+
+    private String modalName;
+
+    private List<ItemComponent> items;
 
 }

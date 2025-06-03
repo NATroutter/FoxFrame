@@ -1,26 +1,22 @@
-package fi.natroutter.foxframe.interfaces;
+package fi.natroutter.foxframe.bot;
 
 import fi.natroutter.foxframe.FoxFrame;
+import fi.natroutter.foxframe.bot.listener.GuildJoin;
 import fi.natroutter.foxframe.command.BaseCommand;
 import fi.natroutter.foxframe.command.CommandHandler;
 import fi.natroutter.foxframe.permissions.INode;
 import fi.natroutter.foxframe.permissions.IPermissionHandler;
 import fi.natroutter.foxlib.logger.FoxLogger;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.OnlineStatus;
-import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-public abstract class HandlerFrame {
+public abstract class BotHandler {
 
     @Getter
     private boolean connected = false;
@@ -29,8 +25,6 @@ public abstract class HandlerFrame {
     private JDABuilder builder;
 
     private CommandHandler commandHandler;
-
-    private List<ListenerAdapter> listeners = new ArrayList<>();
 
     private FoxLogger logger = FoxFrame.getLogger();
 
@@ -42,9 +36,10 @@ public abstract class HandlerFrame {
     public abstract String getAuthor();
     public abstract INode getCooldownBypassPerm();
     public abstract String getToken();
+    public abstract List<GatewayIntent> getIntents();
     public abstract IPermissionHandler getPermissionHandler();
 
-    public HandlerFrame() {
+    public BotHandler() {
         if (getToken().equalsIgnoreCase("TOKEN_HERE")) {
             logger.error("You need to add your token to config.yaml!");
             return;
@@ -54,24 +49,7 @@ public abstract class HandlerFrame {
             return;
         }
 
-        builder = JDABuilder.create(getToken(),
-                GatewayIntent.GUILD_MEMBERS,
-                GatewayIntent.GUILD_EMOJIS_AND_STICKERS,
-                GatewayIntent.GUILD_WEBHOOKS,
-                GatewayIntent.GUILD_INVITES,
-                GatewayIntent.GUILD_VOICE_STATES,
-                GatewayIntent.GUILD_PRESENCES,
-                GatewayIntent.GUILD_MESSAGES,
-                GatewayIntent.GUILD_MESSAGE_REACTIONS,
-                GatewayIntent.GUILD_MESSAGE_TYPING,
-                GatewayIntent.DIRECT_MESSAGES,
-                GatewayIntent.DIRECT_MESSAGE_REACTIONS,
-                GatewayIntent.DIRECT_MESSAGE_TYPING,
-                GatewayIntent.MESSAGE_CONTENT,
-                GatewayIntent.SCHEDULED_EVENTS
-
-        );
-        builder.setActivity(Activity.watching("your behavior"));
+        builder = JDABuilder.create(getToken(), getIntents());
         builder.setStatus(OnlineStatus.ONLINE);
 
         this.commandHandler = new CommandHandler(this,getPermissionHandler(),getCooldownBypassPerm());
@@ -86,9 +64,16 @@ public abstract class HandlerFrame {
         }));
     }
 
+    public void reloadCommands() {
+        if (commandHandler == null) return;
+        commandHandler.registerAll();
+        logger.info("All commands has been reloaded!");
+    }
+
     public void registerCommand(BaseCommand command) {
         if (commandHandler == null) return;
         commandHandler.getCommands().add(command);
+        logger.info("Registering command : " + command.getName());
     }
 
     public void connect(Consumer<JDA> consumer) {
@@ -97,6 +82,7 @@ public abstract class HandlerFrame {
 
         try {
             jda = builder.build();
+            jda.addEventListener(new GuildJoin(commandHandler));
             jda.awaitReady();
             connected = true;
             commandHandler.registerAll();

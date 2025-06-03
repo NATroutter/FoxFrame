@@ -5,9 +5,11 @@ import fi.natroutter.foxframe.components.BaseButton;
 import fi.natroutter.foxframe.components.BaseModal;
 import fi.natroutter.foxframe.components.BaseStringMenu;
 import fi.natroutter.foxframe.permissions.INode;
+import fi.natroutter.foxlib.logger.FoxLogger;
 import lombok.Getter;
 import lombok.Setter;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
@@ -23,9 +25,12 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 
 public abstract class BaseCommand {
+
+    private static final FoxLogger logger = FoxFrame.getLogger();
 
     private ConcurrentHashMap<String, Long> cooldowns = new ConcurrentHashMap<>();
 
@@ -56,6 +61,12 @@ public abstract class BaseCommand {
     private boolean commandReplyTypeModal = false;
 
     @Getter @Setter
+    private ModalCondition modalCondition = (member, bot, guild, channel, args) -> false;
+
+    @Getter @Setter
+    private RegisterCondition registerCondition = (bot, guild)-> true;
+
+    @Getter @Setter
     private int deleteDelay = 0;
 
     @Getter @Setter
@@ -70,9 +81,9 @@ public abstract class BaseCommand {
     @Getter @Setter
     private INode permission;
 
-    @Setter
+    @Getter @Setter
     private Consumer<removedCooldown> onCooldownRemoved = data -> {
-        System.out.println("Removed old cooldown from user \"" + data.userID() + "\" with \""+data.command().getCooldownSeconds()+" seconds\" in command \"" + data.command().getName() + "\"");
+        logger.warn("Removed old cooldown from user \"" + data.userID() + "\" with \""+data.command().getCooldownSeconds()+" seconds\" in command \"" + data.command().getName() + "\"");
     };
 
     public BaseCommand(String name) {
@@ -85,14 +96,36 @@ public abstract class BaseCommand {
         }, 0, 1000L*cooldownCleanInterval);
     }
 
-    public EmbedBuilder info(String msg) {
-        return FoxFrame.info(msg);
-    }
     public EmbedBuilder usage(String msg, String usage) {
         return FoxFrame.usage(msg,usage);
     }
+
+    public EmbedBuilder success(String msg) {
+        return FoxFrame.success(msg);
+    }
+    public EmbedBuilder success(String title,String msg) {
+        return FoxFrame.success(title,msg);
+    }
+
+    public EmbedBuilder info(String msg) {
+        return FoxFrame.info(msg);
+    }
+    public EmbedBuilder info(String title,String msg) {
+        return FoxFrame.info(title,msg);
+    }
+
+    public EmbedBuilder warn(String msg) {
+        return FoxFrame.warn(msg);
+    }
+    public EmbedBuilder warn(String title,String msg) {
+        return FoxFrame.warn(title,msg);
+    }
+
     public EmbedBuilder error(String msg) {
         return FoxFrame.error(msg);
+    }
+    public EmbedBuilder error(String title,String msg) {
+        return FoxFrame.error(title,msg);
     }
 
     public OptionMapping getOption(List<OptionMapping> options, String name) {
@@ -196,17 +229,17 @@ public abstract class BaseCommand {
         return null;
     }
 
-    public Object onButtonPress(Member member, User Bot, Guild guild, MessageChannel channel, BaseButton button) {
+    public Object onButtonPress(JDA jda, Member member, Guild guild, MessageChannel channel, BaseButton button) {
         return "This is default onButtonPress action!";
     };
 
-    public Object onModalSubmit(Member member, User Bot, Guild guild, MessageChannel channel, BaseModal modal, List<ModalMapping> args) {
+    public Object onModalSubmit(JDA jda, Member member, Guild guild, MessageChannel channel, BaseModal modal, List<ModalMapping> args) {
         return "This is default onModalSubmit reply!";
     };
 
-    public Object onStringMenuSelect(Member member, User Bot, Guild guild, MessageChannel channel, BaseStringMenu menu, List<SelectOption> args) {
+    public Object onStringMenuSelect(JDA jda, Member member, Guild guild, MessageChannel channel, BaseStringMenu menu, List<SelectOption> args) {
         return "This is default onStringMenuSelect reply!";
     };
 
-    public abstract Object onCommand(Member member, User bot, Guild guild, MessageChannel channel, List<OptionMapping> args);
+    public abstract Object onCommand(JDA jda, Member member, Guild guild, MessageChannel channel, List<OptionMapping> args);
 }
