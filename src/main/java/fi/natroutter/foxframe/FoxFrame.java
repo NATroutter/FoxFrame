@@ -31,7 +31,9 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -255,20 +257,6 @@ public class FoxFrame {
                 .flatMap(vc -> vc.getMembers().stream())
                 .map(Member::getUser)
                 .collect(Collectors.toList());
-    }
-
-    public static void sendPrivateMessage(User user, EmbedBuilder eb, String contentName) {
-        user.openPrivateChannel().flatMap(pm -> pm.sendMessageEmbeds(eb.build())).queue((mm)->{
-            logger.info("Sent private message!",
-                new LogUser(user),
-                new LogData("ContentName", contentName)
-            );
-        }, new ErrorHandler() .handle(ErrorResponse.CANNOT_SEND_TO_USER, (mm) -> {
-            logger.info("Failed to send private message!",
-                    new LogUser(user),
-                    new LogData("ContentName", contentName)
-            );
-        }));
     }
 
     public static void removeMessages(MessageChannel channel, int amount) {
