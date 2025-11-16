@@ -18,13 +18,13 @@ public class PrivateMessage {
     private static FoxLogger logger = FoxFrame.getLogger();
     private static ConcurrentHashMap<String, Long> privateMessages = new ConcurrentHashMap<>();
 
-    public static void sendPrivateMessage(User user, EmbedBuilder eb, String contentKey) {
-        sendPrivateMessage(user, eb.build(), contentKey, (e)->{});
+    public static void send(User user, EmbedBuilder eb, String contentKey) {
+        send(user, eb.build(), contentKey, (e)->{});
     }
-    public static void sendPrivateMessage(User user, MessageEmbed eb, String contentKey) {
-        sendPrivateMessage(user, eb, contentKey, (e)->{});
+    public static void send(User user, MessageEmbed eb, String contentKey) {
+        send(user, eb, contentKey, (e)->{});
     }
-    public static void sendPrivateMessage(User user, MessageEmbed eb, String contentKey, Consumer<Boolean> result) {
+    public static void send(User user, MessageEmbed eb, String contentKey, Consumer<Boolean> result) {
         user.openPrivateChannel().flatMap(pm -> pm.sendMessageEmbeds(eb)).queue((mm)->{
             logger.info("Sent private message!",
                     new LogUser(user),
@@ -42,13 +42,13 @@ public class PrivateMessage {
     }
 
     //----------------------------------------------------------
-    public static void EditPrivateMessage(User user, EmbedBuilder embed, String contentKey) {
-        EditPrivateMessage(user,embed.build(),contentKey,(e)->{});
+    public static void edit(User user, EmbedBuilder embed, String contentKey) {
+        edit(user,embed.build(),contentKey,(e)->{});
     }
-    public static void EditPrivateMessage(User user, MessageEmbed embed, String contentKey) {
-        EditPrivateMessage(user,embed,contentKey,(e)->{});
+    public static void edit(User user, MessageEmbed embed, String contentKey) {
+        edit(user,embed,contentKey,(e)->{});
     }
-    public static void EditPrivateMessage(User user, MessageEmbed embed, String contentKey, Consumer<Boolean> result) {
+    public static void edit(User user, MessageEmbed embed, String contentKey, Consumer<Boolean> result) {
         Long messageID = privateMessages.getOrDefault(contentKey+"-"+user.getId(),null);
         if (messageID == null) {
             logger.info("Failed to send private message! (Invalid history)",
@@ -78,10 +78,10 @@ public class PrivateMessage {
     //----------------------------------------------------------
 
 
-    public static void sendPrivateMessage(User user, String text, String contentKey) {
-        sendPrivateMessage(user, text, contentKey, (e)->{});
+    public static void send(User user, String text, String contentKey) {
+        send(user, text, contentKey, (e)->{});
     }
-    public static void sendPrivateMessage(User user, String text, String contentKey, Consumer<Boolean> result) {
+    public static void send(User user, String text, String contentKey, Consumer<Boolean> result) {
         user.openPrivateChannel().flatMap(pm -> pm.sendMessage(text)).queue((mm)->{
             logger.info("Sent private message!",
                     new LogUser(user),
@@ -99,10 +99,10 @@ public class PrivateMessage {
     }
 
     //----------------------------------------------------------
-    public static void EditPrivateMessage(User user, String text, String contentKey) {
-        EditPrivateMessage(user, text, contentKey, (e)->{});
+    public static void edit(User user, String text, String contentKey) {
+        edit(user, text, contentKey, (e)->{});
     }
-    public static void EditPrivateMessage(User user, String text, String contentKey, Consumer<Boolean> result) {
+    public static void edit(User user, String text, String contentKey, Consumer<Boolean> result) {
         Long messageID = privateMessages.getOrDefault(contentKey+"-"+user.getId(),null);
         if (messageID == null) {
             logger.info("Failed to send private message! (Invalid history)",
