@@ -2,7 +2,7 @@ package fi.natroutter.foxframe.console.commands;
 
 import fi.natroutter.foxframe.console.ConsoleCommand;
 import fi.natroutter.foxframe.console.ConsoleData;
-import fi.natroutter.foxframe.bot.BotHandler;
+import fi.natroutter.foxframe.bot.DiscordBot;
 
 public class Quit extends ConsoleCommand {
 
@@ -12,9 +12,9 @@ public class Quit extends ConsoleCommand {
     }
 
     @Override
-    public ConsoleData execute(BotHandler handler, ConsoleData data, String[] args) {
-        if (handler.isConnected()) {
-            handler.getJDA().shutdown();
+    public ConsoleData execute(DiscordBot discordBot, ConsoleData data, String[] args) {
+        if (discordBot.isRunning()) {
+            discordBot.disconnect();
             println("Bot has been stopped!");
         } else {
             println("Bot is not connected!");

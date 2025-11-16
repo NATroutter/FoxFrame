@@ -10,7 +10,7 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class EmojiData {
+public class CustomEmoji {
     private String name;
     private long id;
     private boolean animated;

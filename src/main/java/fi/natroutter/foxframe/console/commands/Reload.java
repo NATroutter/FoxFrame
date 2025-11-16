@@ -2,7 +2,7 @@ package fi.natroutter.foxframe.console.commands;
 
 import fi.natroutter.foxframe.console.ConsoleCommand;
 import fi.natroutter.foxframe.console.ConsoleData;
-import fi.natroutter.foxframe.bot.BotHandler;
+import fi.natroutter.foxframe.bot.DiscordBot;
 
 public class Reload extends ConsoleCommand {
 
@@ -12,10 +12,10 @@ public class Reload extends ConsoleCommand {
     }
 
     @Override
-    public ConsoleData execute(BotHandler handler, ConsoleData data, String[] args) {
-        if (handler.isConnected()) {
+    public ConsoleData execute(DiscordBot discordBot, ConsoleData data, String[] args) {
+        if (discordBot.isRunning()) {
             println("Reloading...");
-            handler.reloadCommands();
+            discordBot.reloadCommands();
             println("Reload Done.");
         } else {
             println("Bot is not connected!");

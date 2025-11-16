@@ -2,7 +2,7 @@ package fi.natroutter.foxframe.console.commands;
 
 import fi.natroutter.foxframe.console.ConsoleCommand;
 import fi.natroutter.foxframe.console.ConsoleData;
-import fi.natroutter.foxframe.bot.BotHandler;
+import fi.natroutter.foxframe.bot.DiscordBot;
 
 public class Select extends ConsoleCommand {
 
@@ -12,7 +12,7 @@ public class Select extends ConsoleCommand {
     }
 
     @Override
-    public ConsoleData execute(BotHandler handler, ConsoleData data, String[] args) {
+    public ConsoleData execute(DiscordBot handler, ConsoleData data, String[] args) {
         if (args.length < 2) {
             println(this.getUsage());
             return null;

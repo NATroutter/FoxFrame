@@ -1,21 +1,29 @@
 package fi.natroutter.foxframe;
 
-import fi.natroutter.foxframe.data.EmojiData;
-import fi.natroutter.foxframe.records.GuildTime;
+import fi.natroutter.foxframe.data.CustomEmoji;
+import fi.natroutter.foxframe.data.GuildTime;
+import fi.natroutter.foxframe.data.ImageComparion;
+import fi.natroutter.foxframe.data.logs.LogUser;
 import fi.natroutter.foxlib.logger.FoxLogger;
+import fi.natroutter.foxlib.logger.types.LogData;
 import lombok.Getter;
 import lombok.Setter;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
+import net.dv8tion.jda.api.exceptions.ErrorResponseException;
+import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.utils.MarkdownSanitizer;
 
+import javax.imageio.ImageIO;
 import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -23,13 +31,18 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class FoxFrame {
 
-    //TODO add permission system same as in FoxBot but change the mongoDB to sqlite?
+    //TODO add default permission system same as in FoxBot but change the mongoDB to sqlite?
+    // - some kind of easy way that user can just implement like "PermissionHandlerSqlite"
+    // - or something like that and thenn that just handles the permissions saving etc
+    // - when user creates new instance of "DiscordBot" (Custom) user can just do somethging like
+    // - "PermissionHandler = new sqlitePermissionHandler();"
 
     @Getter @Setter
     private static Color themeColor = new Color(215, 55, 45);
@@ -47,26 +60,34 @@ public class FoxFrame {
     private static Color WarnColor = new Color(215, 145, 45);
 
     @Getter @Setter
-    private static EmojiData infoEmoji = new EmojiData("information_source", -1, false);
+    private static CustomEmoji infoEmoji = new CustomEmoji("information_source", -1, false);
 
     @Getter @Setter
-    private static EmojiData successEmoji = new EmojiData("white_check_mark", -1, false);
+    private static CustomEmoji successEmoji = new CustomEmoji("white_check_mark", -1, false);
 
     @Getter @Setter
-    private static EmojiData warnEmoji = new EmojiData("warning", -1, false);
+    private static CustomEmoji warnEmoji = new CustomEmoji("warning", -1, false);
 
     @Getter @Setter
-    private static EmojiData errorEmoji = new EmojiData("no_entry_sign", -1, false);
+    private static CustomEmoji errorEmoji = new CustomEmoji("no_entry_sign", -1, false);
 
     @Getter @Setter
-    private static EmojiData usageEmoji = new EmojiData("books", -1, false);
+    private static CustomEmoji usageEmoji = new CustomEmoji("books", -1, false);
 
     @Getter @Setter
-    private static EmojiData helpEmoji = new EmojiData("scroll", -1, false);
+    private static CustomEmoji helpEmoji = new CustomEmoji("scroll", -1, false);
 
     @Getter @Setter
     private static boolean useEmojis = true;
 
+    @Getter @Setter
+    private static int defaultDeleteMessageTime = 30;
+
+    @Getter @Setter
+    private static TimeUnit defaultDeleteMessageTimeUnit = TimeUnit.SECONDS;
+
+    @Getter @Setter
+    private static boolean printStackTrace = false;
 
     @Getter @Setter
     private static FoxLogger logger = new FoxLogger.Builder()
@@ -91,58 +112,117 @@ public class FoxFrame {
         return matcher.matches();
     }
 
+    public static void replyError(IReplyCallback event, String message) { replyError(event, null, message, true, null, null); }
+    public static void replyError(IReplyCallback event, String title, String message) { replyError(event, title, message, true, null, null); }
+    public static void replyError(IReplyCallback event, String title, String message, boolean hidden) { replyError(event, title, message, hidden, null, null); }
+    public static void replyError(IReplyCallback event, String title, String message, boolean hidden, Integer deleteAfter) { replyError(event, title, message, hidden, deleteAfter, null); }
+    public static void replyError(IReplyCallback event, String title, String message, boolean hidden, Integer deleteAfter, TimeUnit timeUnit) {
+        reply(event, error(title,message), title, message, hidden, deleteAfter, timeUnit);
+    }
+
+    public static void replyWarn(IReplyCallback event, String message) { replyWarn(event, null, message, true, null, null); }
+    public static void replyWarn(IReplyCallback event, String title, String message) { replyWarn(event, title, message, true, null, null); }
+    public static void replyWarn(IReplyCallback event, String title, String message, boolean hidden) { replyWarn(event, title, message, hidden, null, null); }
+    public static void replyWarn(IReplyCallback event, String title, String message, boolean hidden, Integer deleteAfter) { replyWarn(event, title, message, hidden, deleteAfter, null); }
+    public static void replyWarn(IReplyCallback event, String title, String message, boolean hidden, Integer deleteAfter, TimeUnit timeUnit) {
+        reply(event, warn(title,message), title, message, hidden, deleteAfter, timeUnit);
+    }
+
+    public static void replyInfo(IReplyCallback event, String message) { replyInfo(event, null, message, true, null, null); }
+    public static void replyInfo(IReplyCallback event, String title, String message) { replyInfo(event, title, message, true, null, null); }
+    public static void replyInfo(IReplyCallback event, String title, String message, boolean hidden) { replyInfo(event, title, message, hidden, null, null); }
+    public static void replyInfo(IReplyCallback event, String title, String message, boolean hidden, Integer deleteAfter) { replyInfo(event, title, message, hidden, deleteAfter, null); }
+    public static void replyInfo(IReplyCallback event, String title, String message, boolean hidden, Integer deleteAfter, TimeUnit timeUnit) {
+        reply(event, info(title,message), title, message, hidden, deleteAfter, timeUnit);
+    }
+
+    public static void replySuccess(IReplyCallback event, String message) { replySuccess(event, null, message, true, null, null); }
+    public static void replySuccess(IReplyCallback event, String title, String message) { replySuccess(event, title, message, true, null, null); }
+    public static void replySuccess(IReplyCallback event, String title, String message, boolean hidden) { replySuccess(event, title, message, hidden, null, null); }
+    public static void replySuccess(IReplyCallback event, String title, String message, boolean hidden, Integer deleteAfter) { replySuccess(event, title, message, hidden, deleteAfter, null); }
+    public static void replySuccess(IReplyCallback event, String title, String message, boolean hidden, Integer deleteAfter, TimeUnit timeUnit) {
+        reply(event, success(title,message), title, message, hidden, deleteAfter, timeUnit);
+    }
+
+    public static void replyUsage(IReplyCallback event, String message) { replyUsage(event, null, message, true, null, null); }
+    public static void replyUsage(IReplyCallback event, String title, String message) { replyUsage(event, title, message, true, null, null); }
+    public static void replyUsage(IReplyCallback event, String title, String message, boolean hidden) { replyUsage(event, title, message, hidden, null, null); }
+    public static void replyUsage(IReplyCallback event, String title, String message, boolean hidden, Integer deleteAfter) { replyUsage(event, title, message, hidden, deleteAfter, null); }
+    public static void replyUsage(IReplyCallback event, String title, String message, boolean hidden, Integer deleteAfter, TimeUnit timeUnit) {
+        reply(event, usage(title,message), title, message, hidden, deleteAfter, timeUnit);
+    }
+
+    private static void reply(IReplyCallback event, EmbedBuilder eb, String title, String message,boolean hidden, Integer deleteAfter, TimeUnit timeUnit) {
+        int deleteIn = (deleteAfter == null ? defaultDeleteMessageTime : deleteAfter);
+        TimeUnit unit = (timeUnit == null ? defaultDeleteMessageTimeUnit : timeUnit);
+
+        if (deleteIn > 0) {
+            eb.setFooter("This message will be deleted after " + deleteIn + " " + unit.name().toLowerCase());
+        }
+        event.replyEmbeds(eb.build()).setEphemeral(hidden).queue(msg-> {
+            if (deleteIn > 0) {
+                delayedDelete(msg, deleteIn, unit);
+            }
+        }, new ErrorHandler().handle(ErrorResponse.UNKNOWN_MESSAGE, (err) -> {
+            logger.error("Failed to send usage message!",err, new LogData("Title", title), new LogData("Message", message));
+        }));
+    }
+
+
     public static EmbedBuilder error(String msg) {
-        return error(msg, null);
+        return error(null, msg);
     }
     public static EmbedBuilder error(String title, String msg) {
         EmbedBuilder eb =  embedTemplate();
         eb.setColor(ErrorColor);
-        eb.setTitle((useEmojis ? errorEmoji.asFormat():"") + title);
-        if (msg != null) {
-            eb.setDescription(msg);
-        }
+        if (title == null) title = "Error!";
+        String ebTitle = (useEmojis ? errorEmoji.asFormat():"")+" "+title;
+        eb.setDescription("## "+ebTitle + "\n" +msg);
         return eb;
     }
 
-    public static EmbedBuilder warn(String msg) {return warn(" Warning!",msg);}
+    public static EmbedBuilder warn(String msg) {return warn(null,msg);}
     public static EmbedBuilder warn(String title, String msg) {
         EmbedBuilder eb =  embedTemplate();
         eb.setColor(WarnColor);
-        eb.setTitle((useEmojis ? warnEmoji.asFormat():"")+title);
-        eb.setDescription(msg);
+        if (title == null) title = "Warning!";
+        String ebTitle = (useEmojis ? warnEmoji.asFormat():"")+" "+title;
+        eb.setDescription("## "+ebTitle + "\n" +msg);
         return eb;
     }
 
-    public static EmbedBuilder info(String msg) {return info(" Info.",msg);}
+    public static EmbedBuilder info(String msg) {return info(null,msg);}
     public static EmbedBuilder info(String title, String msg) {
         EmbedBuilder eb =  embedTemplate();
         eb.setColor(InfoColor);
-        eb.setTitle((useEmojis ? infoEmoji.asFormat():"")+title);
-        eb.setDescription(msg);
+        if (title == null) title = "Info!";
+        String ebTitle = (useEmojis ? infoEmoji.asFormat():"")+" "+title;
+        eb.setDescription("## "+ebTitle + "\n" +msg);
         return eb;
     }
 
-    public static EmbedBuilder success(String msg) {return success(" Success.",msg);}
+    public static EmbedBuilder success(String msg) {return success(null,msg);}
     public static EmbedBuilder success(String title, String msg) {
         EmbedBuilder eb =  embedTemplate();
-        eb.setColor(SuccessColor);
-        eb.setTitle((useEmojis ? successEmoji.asFormat():"")+title);
-        eb.setDescription(msg);
+        eb.setColor(SuccessColor); // Success.
+
+        if (title == null) title = "Success!";
+        String ebTitle = (useEmojis ? successEmoji.asFormat():"")+" "+title;
+        eb.setDescription("## "+ebTitle + "\n" +msg);
         return eb;
     }
 
     public static EmbedBuilder usage(String usage) { return usage(null,usage); }
-    public static EmbedBuilder usage(String leadingMessage, String usage) {
+    public static EmbedBuilder usage(String title, String usage) {
         EmbedBuilder eb =  embedTemplate();
         eb.setColor(InfoColor);
-        eb.setTitle((useEmojis ? usageEmoji.asFormat():"")+" You didn't use that correctly!");
-        if (leadingMessage != null) {
-            eb.setDescription(leadingMessage + "\n\n> **Usage:** _" + usage + "_");
-        } else {
-            eb.setDescription("> **Usage:** _" + usage + "_");
-        }
+        if (title == null) title = "You didn't use that correctly!";
+        String ebTitle = (useEmojis ? usageEmoji.asFormat():"")+" "+title;
+        eb.setDescription("## "+ebTitle + "\n> **Usage:** *"+usage+"*");
         return eb;
     }
+
+
 
     public record HelpEntry(String command, String description) {}
     public static EmbedBuilder helpMessage(String title, String description, HelpEntry... helps) {
@@ -179,9 +259,15 @@ public class FoxFrame {
 
     public static void sendPrivateMessage(User user, EmbedBuilder eb, String contentName) {
         user.openPrivateChannel().flatMap(pm -> pm.sendMessageEmbeds(eb.build())).queue((mm)->{
-            logger.info("Sent private message to " + user.getGlobalName() + " ("+contentName+")");
+            logger.info("Sent private message!",
+                new LogUser(user),
+                new LogData("ContentName", contentName)
+            );
         }, new ErrorHandler() .handle(ErrorResponse.CANNOT_SEND_TO_USER, (mm) -> {
-            logger.info("Failed to send private message to " + user.getGlobalName() + " ("+contentName+")");
+            logger.info("Failed to send private message!",
+                    new LogUser(user),
+                    new LogData("ContentName", contentName)
+            );
         }));
     }
 
@@ -220,5 +306,69 @@ public class FoxFrame {
             return new GuildTime(joined, daysInGuild);
         }
         return new GuildTime("Unknown", -1L);
+    }
+
+    public static ImageComparion compareImageDataFromURL(String oldImageURL, String newImageURL) {
+        try{
+            //Get current avatar and read bytes
+            BufferedImage oldImgBuffer = ImageIO.read(URI.create(oldImageURL).toURL());
+            ByteArrayOutputStream oldByteArray = new ByteArrayOutputStream();
+            ImageIO.write(oldImgBuffer, "png", oldByteArray);
+            byte[] oldImageBytes = oldByteArray.toByteArray();
+
+            //Get new avatar and read bytes
+            BufferedImage newImgBuffer = ImageIO.read(URI.create(newImageURL).toURL());
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageIO.write(newImgBuffer, "png", baos);
+            byte[] newImageBytes = baos.toByteArray();
+
+            if (Arrays.equals(oldImageBytes, newImageBytes)) {
+                return ImageComparion.SAME_IMAGE;
+            } else {
+                return ImageComparion.NOT_SAME_IMAGE;
+            }
+
+        } catch (IOException error) {
+            logger.error("Failed to compare images!",error,
+                new LogData("OldImage", oldImageURL),
+                new LogData("NewImage", newImageURL)
+            );
+            return ImageComparion.ERROR;
+        }
+    }
+
+    public static void delayedDelete(InteractionHook message) {
+        delayedDelete(message, defaultDeleteMessageTime, defaultDeleteMessageTimeUnit);
+    }
+    public static void delayedDelete(InteractionHook message, int seconds) {
+        delayedDelete(message, seconds, defaultDeleteMessageTimeUnit);
+    }
+    public static void delayedDelete(InteractionHook message, int seconds, TimeUnit timeUnit) {
+        // Try to fetch the original message before attempting to delete
+        message.retrieveOriginal().queueAfter(seconds, timeUnit,
+                original -> {
+                    // If retrieval succeeds, schedule deletion
+                    message.deleteOriginal().queue(
+                            success -> {},
+                            failure -> {
+                                if (failure instanceof ErrorResponseException error) {
+                                    if (error.getErrorResponse() == ErrorResponse.UNKNOWN_MESSAGE || error.getErrorResponse() == ErrorResponse.UNKNOWN_CHANNEL) {
+                                        return;
+                                    }
+                                }
+                                if (printStackTrace) failure.printStackTrace();
+                            }
+                    );
+                },
+                fetchFailure -> {
+                    // If the message does not exist, do nothing
+                    if (fetchFailure instanceof ErrorResponseException error) {
+                        if (error.getErrorResponse() == ErrorResponse.UNKNOWN_MESSAGE || error.getErrorResponse() == ErrorResponse.UNKNOWN_CHANNEL) {
+                            return;
+                        }
+                    }
+                    if (printStackTrace) fetchFailure.printStackTrace();
+                }
+        );
     }
 }

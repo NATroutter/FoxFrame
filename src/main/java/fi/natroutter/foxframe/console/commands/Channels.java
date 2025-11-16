@@ -2,7 +2,7 @@ package fi.natroutter.foxframe.console.commands;
 
 import fi.natroutter.foxframe.console.ConsoleCommand;
 import fi.natroutter.foxframe.console.ConsoleData;
-import fi.natroutter.foxframe.bot.BotHandler;
+import fi.natroutter.foxframe.bot.DiscordBot;
 
 public class Channels extends ConsoleCommand {
 
@@ -12,7 +12,7 @@ public class Channels extends ConsoleCommand {
     }
 
     @Override
-    public ConsoleData execute(BotHandler handler, ConsoleData data, String[] args) {
+    public ConsoleData execute(DiscordBot handler, ConsoleData data, String[] args) {
         if (data.getSelectedGuild() == null) {
             println("No guild selected!");
             return null;

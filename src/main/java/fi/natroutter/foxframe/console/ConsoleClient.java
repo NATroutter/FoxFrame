@@ -2,7 +2,7 @@ package fi.natroutter.foxframe.console;
 
 import fi.natroutter.foxframe.FoxFrame;
 import fi.natroutter.foxframe.console.commands.*;
-import fi.natroutter.foxframe.bot.BotHandler;
+import fi.natroutter.foxframe.bot.DiscordBot;
 import fi.natroutter.foxlib.FoxLib;
 import fi.natroutter.foxlib.logger.FoxLogger;
 import lombok.Getter;
@@ -16,7 +16,7 @@ import java.util.*;
 public class ConsoleClient {
 
     private Scanner scanner = new Scanner(System.in);
-    private BotHandler handler;
+    private DiscordBot discordBot;
     private FoxLogger logger = FoxFrame.getLogger();
 
     @Getter @Setter
@@ -29,8 +29,8 @@ public class ConsoleClient {
 
     private Map<String, ConsoleCommand> commands = new HashMap<>();
 
-    public ConsoleClient(BotHandler handler) {
-        this.handler = handler;
+    public ConsoleClient(DiscordBot discordBot) {
+        this.discordBot = discordBot;
 
         if (useDefaultCommands) {
             register(
@@ -66,10 +66,10 @@ public class ConsoleClient {
         print("> ");
         String input = scanner.nextLine();
 
-        if (handler.isConnected()) {
-            data.setGuilds(handler.getJDA().getGuilds());
+        if (discordBot.isRunning()) {
+            data.setGuilds(discordBot.getJDA().getGuilds());
             if (!data.getGuilds().isEmpty() && data.getSelectedGuild() != null) {
-                Guild g = handler.getJDA().getGuildById(data.getSelectedGuild().getIdLong());
+                Guild g = discordBot.getJDA().getGuildById(data.getSelectedGuild().getIdLong());
                 if (g != null) {
                     data.setChannels(g.getTextChannels());
                 }
@@ -85,9 +85,9 @@ public class ConsoleClient {
         }
 
         if (useDefaultHelpCommand && command.equalsIgnoreCase("help")) {
-            println("======= "+handler.getBotName()+" Console Client =======");
-            println("Version: " + handler.getVersion());
-            println("Author: " + handler.getAuthor());
+            println("======= "+ discordBot.name()+" Console Client =======");
+            println("Version: " + discordBot.version());
+            println("Author: " + discordBot.author());
             println(" ");
             println("Selected:");
             println("  Guild: " + (data.getSelectedGuild() != null ? data.getSelectedGuild().getName() + " (" + data.getSelectedGuild().getId() + ")" : "None"));
@@ -107,7 +107,7 @@ public class ConsoleClient {
         }
 
         ConsoleCommand cmd = commands.get(command.toLowerCase());
-        ConsoleData newData = cmd.execute(handler, data, args);
+        ConsoleData newData = cmd.execute(discordBot, data, args);
         if (newData != null) {
             data=newData;
         }

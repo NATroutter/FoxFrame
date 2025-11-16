@@ -8,12 +8,19 @@ import java.util.function.Consumer;
 
 public abstract class IPermissionHandler {
 
-    public abstract void has(Member member, Guild guild, INode node, Consumer<Boolean> result);
+    public abstract void has(Member member, Guild guild, INode node, Runnable success, Runnable failed);
 
-    public CompletableFuture<Boolean> has(Member member, Guild guild, INode nodes) {
-        CompletableFuture<Boolean> result = new CompletableFuture<>();
-        has(member,guild,nodes, result::complete);
-        return result;
+    public void has(Member member, Guild guild, INode node, Runnable success) {
+        has(member,guild,node,success, ()->{});
+    }
+
+    public CompletableFuture<Boolean> has(Member member, Guild guild, INode node) {
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        has(member, guild, node,
+                () -> future.complete(true),     // on success
+                () -> future.complete(false)     // on failure
+        );
+        return future;
     }
 
 }
