@@ -86,6 +86,14 @@ public abstract class DiscordCommand {
     *
     */
 
+    //Reply Text
+    public void reply(SlashCommandInteractionEvent event, String text) {
+        reply(event, text, true);
+    }
+    public void reply(SlashCommandInteractionEvent event, String text, boolean hidden) {
+        event.reply(text).setEphemeral(hidden).queue();
+    }
+
     //Reply EmbedMessage
     public void reply(SlashCommandInteractionEvent event, MessageEmbed embed) {
         reply(event, embed, true);
