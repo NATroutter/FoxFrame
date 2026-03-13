@@ -62,6 +62,12 @@ public class FoxFrame {
     private static Color WarnColor = new Color(215, 145, 45);
 
     @Getter @Setter
+    private static ZoneId timeZoneID = ZoneId.of("Europe/Helsinki");
+
+    @Getter @Setter
+    private static DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+
+    @Getter @Setter
     private static CustomEmoji infoEmoji = new CustomEmoji("information_source", -1, false);
 
     @Getter @Setter
@@ -160,14 +166,18 @@ public class FoxFrame {
 
         if (deleteIn > 0) {
             eb.setFooter("This message will be deleted after " + deleteIn + " " + unit.name().toLowerCase());
+
+            event.replyEmbeds(eb.build()).setEphemeral(hidden).queue(msg-> {
+                if (deleteIn > 0) {
+                    delayedDelete(msg, deleteIn, unit);
+                }
+            }, new ErrorHandler().handle(ErrorResponse.UNKNOWN_MESSAGE, (err) -> {
+                logger.error("Failed to send usage message!",err, new LogData("Title", title), new LogData("Message", message));
+            }));
+            return;
         }
-        event.replyEmbeds(eb.build()).setEphemeral(hidden).queue(msg-> {
-            if (deleteIn > 0) {
-                delayedDelete(msg, deleteIn, unit);
-            }
-        }, new ErrorHandler().handle(ErrorResponse.UNKNOWN_MESSAGE, (err) -> {
-            logger.error("Failed to send usage message!",err, new LogData("Title", title), new LogData("Message", message));
-        }));
+
+        event.replyEmbeds(eb.build()).setEphemeral(hidden).queue();
     }
 
 
@@ -275,14 +285,10 @@ public class FoxFrame {
     }
 
     public static GuildTime getGuildTime(Member member) {
-        ZoneId helsinki = ZoneId.of("Europe/Helsinki");
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
-        return getGuildTime(member, helsinki, formatter);
+        return getGuildTime(member, timeZoneID, timeFormatter);
     }
     public static GuildTime getGuildTime(Member member, String timeZoneName, String dateFormatPattern) {
-        ZoneId helsinki = ZoneId.of(timeZoneName);
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(dateFormatPattern);
-        return getGuildTime(member, helsinki, formatter);
+        return getGuildTime(member, ZoneId.of(timeZoneName), DateTimeFormatter.ofPattern(dateFormatPattern));
     }
     public static GuildTime getGuildTime(Member member, ZoneId timeZone, DateTimeFormatter formatter) {
         if (member != null) {
@@ -328,12 +334,12 @@ public class FoxFrame {
     public static void delayedDelete(InteractionHook message) {
         delayedDelete(message, defaultDeleteMessageTime, defaultDeleteMessageTimeUnit);
     }
-    public static void delayedDelete(InteractionHook message, int seconds) {
-        delayedDelete(message, seconds, defaultDeleteMessageTimeUnit);
+    public static void delayedDelete(InteractionHook message, int duration) {
+        delayedDelete(message, duration, defaultDeleteMessageTimeUnit);
     }
-    public static void delayedDelete(InteractionHook message, int seconds, TimeUnit timeUnit) {
+    public static void delayedDelete(InteractionHook message, int duration, TimeUnit timeUnit) {
         // Try to fetch the original message before attempting to delete
-        message.retrieveOriginal().queueAfter(seconds, timeUnit,
+        message.retrieveOriginal().queueAfter(duration, timeUnit,
                 original -> {
                     // If retrieval succeeds, schedule deletion
                     message.deleteOriginal().queue(
