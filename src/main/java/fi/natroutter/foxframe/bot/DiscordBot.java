@@ -16,7 +16,9 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Icon;
 import net.dv8tion.jda.api.entities.SelfUser;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 import net.dv8tion.jda.api.managers.AccountManager;
 import net.dv8tion.jda.api.requests.GatewayIntent;
@@ -101,6 +103,7 @@ public abstract class DiscordBot {
 
         builder.addEventListeners(
                 new SlashCommandListener(this, permissionHandler(), permissionHolder().bypassCommandCooldown()),
+                new AutoCompleteListener(this),
                 new ButtonInteractListener(this),
                 new EntityMenuListener(this),
                 new StringMenuListener(this),
@@ -122,18 +125,28 @@ public abstract class DiscordBot {
         logger.info("All commands has been reloaded!");
     }
 
+    public List<CommandData> contextCommands() {
+        return List.of();
+    }
+
     public void registerGuildCommands(Guild guild) {
-        List<SlashCommandData> list = new ArrayList<>();
-        if (commands() == null || commands().isEmpty()) return;
-        for (DiscordCommand command : commands()) {
-            boolean regCondition = command.getRegisterCondition().test(jda.getSelfUser(), guild);
-            if (regCondition) {
-                SlashCommandData data = Commands.slash(command.getName().toLowerCase(), command.getDescription());
-                if (!command.options().isEmpty()) {
-                    data.addOptions(command.options());
+        List<CommandData> list = new ArrayList<>();
+        if (commands() != null && !commands().isEmpty()) {
+            for (DiscordCommand command : commands()) {
+                boolean regCondition = command.getRegisterCondition().test(jda.getSelfUser(), guild);
+                if (regCondition) {
+                    SlashCommandData data = Commands.slash(command.getName().toLowerCase(), command.getDescription());
+                    List<OptionData> options = command.buildOptions();
+                    if (!options.isEmpty()) {
+                        data.addOptions(options);
+                    }
+                    list.add(data);
                 }
-                list.add(data);
             }
+        }
+
+        if (contextCommands() != null && !contextCommands().isEmpty()) {
+            list.addAll(contextCommands());
         }
         guild.updateCommands().addCommands(list).queue();
     }

@@ -21,6 +21,8 @@ public abstract class DiscordCommand {
 
     private static final FoxLogger logger = FoxFrame.getLogger();
 
+    private final Map<String, AutoComplete> completions = new HashMap<>();
+
     @Getter
     private String name;
 
@@ -78,6 +80,35 @@ public abstract class DiscordCommand {
     }
 
 
+    /**
+     * Registers where one option's suggestions come from. Call it from the command's constructor.
+     */
+    protected void autoComplete(String option, AutoComplete source) {
+        completions.put(option.toLowerCase(Locale.ROOT), source);
+    }
+
+    /** The source registered for an option, or null when it has none. */
+    public AutoComplete autoCompleteFor(String option) {
+        return completions.get(option.toLowerCase(Locale.ROOT));
+    }
+
+    /**
+     * The declared options with autocomplete switched on wherever a source is registered.
+     *
+     * <p>Discord only sends the autocomplete interaction for options registered with the flag, so
+     * deriving it from the registry means the flag and the handler can never disagree — and an
+     * option that nothing answers for can never be left spinning.
+     */
+    public final List<OptionData> buildOptions() {
+        List<OptionData> options = options();
+        for (OptionData option : options) {
+            if (completions.containsKey(option.getName().toLowerCase(Locale.ROOT))
+                    && option.getType().canSupportChoices()) {
+                option.setAutoComplete(true);
+            }
+        }
+        return options;
+    }
 
 
     /*
