@@ -24,9 +24,9 @@ public class EntityMenuListener extends ListenerAdapter {
 
     @Override
     public void onEntitySelectInteraction(EntitySelectInteractionEvent event) {
-        if (bot.commands() == null || bot.commands().isEmpty()) return;
+        if (bot.getCommands() == null || bot.getCommands().isEmpty()) return;
 
-        for (DiscordCommand cmd : bot.commands()) {
+        for (DiscordCommand cmd : bot.getCommands()) {
 
             if (cmd instanceof EntityMenuEvent entityMenuEvent) {
                 if (entityMenuEvent.entityMenus().size() > 5) {

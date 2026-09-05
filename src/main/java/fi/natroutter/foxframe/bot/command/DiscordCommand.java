@@ -35,7 +35,7 @@ public abstract class DiscordCommand {
     @Getter @Setter
     private int deleteDelay = 0;
 
-    @Getter @Setter
+    @Getter
     private int cooldownTime = 10; //30
 
     @Getter @Setter
@@ -48,18 +48,35 @@ public abstract class DiscordCommand {
     private INode permission;
 
     @Getter
-    private final Cooldown<String> cooldown = new Cooldown.Builder<String>()
-            .setDefaultCooldown(cooldownTime)
-            .setDefaultTimeUnit(TimeUnit.SECONDS)
-            .onCooldownExpiry((userID,data)-> {
-                long seconds = TimeUnit.SECONDS.convert(data.cooldown().time(), data.cooldown().timeUnit());
-                logger.warn("Removed expired cooldown!",
-                        new LogData("Command", name),
-                        new LogData("UserID", userID),
-                        new LogData("Duration", seconds + "s")
-                );
-            })
-            .build();
+    private volatile Cooldown<String> cooldown = buildCooldown(cooldownTime);
+
+    /**
+     * Sets how long this command's cooldown lasts, in seconds. Call it from the command's
+     * constructor.
+     *
+     * <p>The store is rebuilt rather than reused, because a cooldown store is built around its
+     * duration: the one made for the previous value keeps evicting entries on the old schedule, so
+     * reusing it would cap every cooldown at whatever the command was first built with.
+     */
+    public void setCooldownTime(int seconds) {
+        this.cooldownTime = seconds;
+        this.cooldown = buildCooldown(seconds);
+    }
+
+    private Cooldown<String> buildCooldown(int seconds) {
+        return new Cooldown.Builder<String>()
+                .setDefaultCooldown(seconds)
+                .setDefaultTimeUnit(TimeUnit.SECONDS)
+                .onCooldownExpiry((userID,data)-> {
+                    long expired = TimeUnit.SECONDS.convert(data.cooldown().time(), data.cooldown().timeUnit());
+                    logger.warn("Removed expired cooldown!",
+                            new LogData("Command", name),
+                            new LogData("UserID", userID),
+                            new LogData("Duration", expired + "s")
+                    );
+                })
+                .build();
+    }
 
 
     public boolean hasCooldown(Member member) {

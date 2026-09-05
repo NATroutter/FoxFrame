@@ -30,13 +30,13 @@ public class SlashCommandListener extends ListenerAdapter {
 
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
-        if (bot.commands() == null || bot.commands().isEmpty()) return;
+        if (bot.getCommands() == null || bot.getCommands().isEmpty()) return;
 
         if (event.getGuild() == null) return;
         Member member = event.getMember();
         if (member == null) return;
 
-        for (DiscordCommand cmd : bot.commands()) {
+        for (DiscordCommand cmd : bot.getCommands()) {
             if (event.getName().equalsIgnoreCase(cmd.getName())) {
 
                 if (cmd.hasCooldown(member)) {

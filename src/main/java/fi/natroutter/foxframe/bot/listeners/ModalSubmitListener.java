@@ -24,9 +24,9 @@ public class ModalSubmitListener extends ListenerAdapter {
 
     @Override
     public void onModalInteraction(ModalInteractionEvent event) {
-        if (bot.commands() == null || bot.commands().isEmpty()) return;
+        if (bot.getCommands() == null || bot.getCommands().isEmpty()) return;
 
-        for (DiscordCommand cmd : bot.commands()) {
+        for (DiscordCommand cmd : bot.getCommands()) {
 
             if (cmd instanceof ModalSubmitEvent modalEvent) {
                 for (Modal modal : modalEvent.modals()) {

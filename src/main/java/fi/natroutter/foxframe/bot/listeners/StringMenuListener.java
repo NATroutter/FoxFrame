@@ -24,9 +24,9 @@ public class StringMenuListener extends ListenerAdapter {
 
     @Override
     public void onStringSelectInteraction(StringSelectInteractionEvent event) {
-        if (bot.commands() == null || bot.commands().isEmpty()) return;
+        if (bot.getCommands() == null || bot.getCommands().isEmpty()) return;
 
-        for (DiscordCommand cmd : bot.commands()) {
+        for (DiscordCommand cmd : bot.getCommands()) {
 
             if (cmd instanceof StringMenuEvent stringMenuEvent) {
                 if (stringMenuEvent.StringMenus().size() > 5) {

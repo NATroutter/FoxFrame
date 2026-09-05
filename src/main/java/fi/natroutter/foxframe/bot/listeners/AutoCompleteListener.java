@@ -31,11 +31,11 @@ public class AutoCompleteListener extends ListenerAdapter {
 
     @Override
     public void onCommandAutoCompleteInteraction(CommandAutoCompleteInteractionEvent event) {
-        if (bot.commands() == null || bot.commands().isEmpty()) {
+        if (bot.getCommands() == null || bot.getCommands().isEmpty()) {
             return;
         }
 
-        for (DiscordCommand cmd : bot.commands()) {
+        for (DiscordCommand cmd : bot.getCommands()) {
             if (!event.getName().equalsIgnoreCase(cmd.getName())) {
                 continue;
             }

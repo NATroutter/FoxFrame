@@ -25,8 +25,8 @@ public class ButtonInteractListener extends ListenerAdapter {
 
     @Override
     public void onButtonInteraction(ButtonInteractionEvent event) {
-        if (bot.commands() == null || bot.commands().isEmpty()) return;
-        for (DiscordCommand cmd : bot.commands()) {
+        if (bot.getCommands() == null || bot.getCommands().isEmpty()) return;
+        for (DiscordCommand cmd : bot.getCommands()) {
             if (!(cmd instanceof ButtonPressEvent buttonPressEvent)) {
                 return;
             }

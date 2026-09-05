@@ -61,6 +61,29 @@ public abstract class DiscordBot {
     public List<ListenerAdapter> listener() { return Collections.emptyList(); }
     public List<DiscordCommand> commands() { return Collections.emptyList(); }
 
+    private volatile List<DiscordCommand> cachedCommands;
+
+    /**
+     * The command instances this bot runs on, built once.
+     *
+     * <p>{@link #commands()} is a factory, and an implementation is free to construct its commands
+     * fresh every call. A command carries its own state though, cooldowns and autocomplete sources
+     * among it, so the framework has to keep hold of one set of instances rather than rebuild them
+     * per interaction, or that state is thrown away between the check and the next use. Everything
+     * inside FoxFrame reads commands through here for that reason.
+     */
+    public final List<DiscordCommand> getCommands() {
+        if (cachedCommands == null) {
+            synchronized (this) {
+                if (cachedCommands == null) {
+                    List<DiscordCommand> built = commands();
+                    cachedCommands = built == null ? Collections.emptyList() : List.copyOf(built);
+                }
+            }
+        }
+        return cachedCommands;
+    }
+
 
     public abstract String name();
     public abstract String version();
@@ -131,8 +154,8 @@ public abstract class DiscordBot {
 
     public void registerGuildCommands(Guild guild) {
         List<CommandData> list = new ArrayList<>();
-        if (commands() != null && !commands().isEmpty()) {
-            for (DiscordCommand command : commands()) {
+        if (!getCommands().isEmpty()) {
+            for (DiscordCommand command : getCommands()) {
                 boolean regCondition = command.getRegisterCondition().test(jda.getSelfUser(), guild);
                 if (regCondition) {
                     SlashCommandData data = Commands.slash(command.getName().toLowerCase(), command.getDescription());
@@ -155,8 +178,8 @@ public abstract class DiscordBot {
         if (builder == null) return;
         logger.info("Connecting to discord...");
 
-        if (commands() != null && !commands().isEmpty()) {
-            logger.info("Registering command : " + commands().stream().map(DiscordCommand::getName).collect(Collectors.joining(", ")));
+        if (!getCommands().isEmpty()) {
+            logger.info("Registering command : " + getCommands().stream().map(DiscordCommand::getName).collect(Collectors.joining(", ")));
         } else {
             logger.info("There are not commands registered!");
         }
