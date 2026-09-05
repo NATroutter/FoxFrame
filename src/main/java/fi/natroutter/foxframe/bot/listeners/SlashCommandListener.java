@@ -51,9 +51,14 @@ public class SlashCommandListener extends ListenerAdapter {
                     return;
                 }
                 if (cmd.getCooldownTime() > 0) {
-                    permissionHandler.has(member, event.getGuild(), bypassCooldownPermission, ()->{
+                    if (!cmd.isAllowCooldownBypass()) {
                         cmd.setCooldown(member);
-                    });
+                    } else {
+                        permissionHandler.has(member, event.getGuild(), bypassCooldownPermission,
+                                ()->{}, //holds the bypass node, so no cooldown
+                                ()-> cmd.setCooldown(member)
+                        );
+                    }
                 }
 
                 logger.info("Member used command!",

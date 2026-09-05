@@ -41,6 +41,9 @@ public abstract class DiscordCommand {
     @Getter @Setter
     private int cooldownCleanInterval = 60; // 60
 
+    @Getter
+    private boolean allowCooldownBypass = true;
+
     @Getter @Setter
     private INode permission;
 
@@ -77,6 +80,18 @@ public abstract class DiscordCommand {
 
     public DiscordCommand(String name) {
         this.name = name;
+    }
+
+    /**
+     * Whether the bypass cooldown permission is honoured for this command. Call it from the
+     * command's constructor.
+     *
+     * <p>Defaults to true, so a member holding the node skips the cooldown as usual. Set it to false
+     * for a command whose cooldown protects something the permission has no business overriding, and
+     * the cooldown then applies to everyone, node or not.
+     */
+    protected void allowCooldownBypass(boolean allow) {
+        this.allowCooldownBypass = allow;
     }
 
 
